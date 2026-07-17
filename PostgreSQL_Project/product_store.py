@@ -147,13 +147,25 @@ print("\nUpdated Product List:\n")
 for product in updated_products:
     print(product)
 
-connection.commit()
 
+connection.commit()
 print("Tablet inserted successfully.")
 
-# Close the PostgreSQL cursor and database connection properly.
+
+
+# Bonus Task
+try:
+    category = input("Enter category: ")
+    cursor.execute("SELECT * FROM products WHERE category=%s", (category,))
+    print(cursor.fetchall())
+except:
+    print("Error")
+
+
+
+    # Close the PostgreSQL cursor and database connection properly.
 cursor.close()
 connection.close()
-
 print("PostgreSQL cursor and database connection closed successfully.")
+
 
