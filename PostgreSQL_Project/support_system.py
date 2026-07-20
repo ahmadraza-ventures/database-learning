@@ -1,5 +1,5 @@
 import psycopg2
-import pandas
+import pandas as pd
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics.pairwise import cosine_similarity
@@ -17,4 +17,62 @@ connection = psycopg2.connect(
 )
 cursor = connection.cursor()
 print(" Database Connected Successfully!")
+
+# Create a table named tickets with the following columns:
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tickets(
+    id INT PRIMARY KEY,
+    customer_name VARCHAR(100),
+    category VARCHAR(100),
+    priority VARCHAR(20),
+    resolution_time INT
+)
+""")
+
+connection.commit()
+
+# Insert the following records:
+cursor.execute("""
+INSERT INTO tickets
+(id, customer_name, category, priority, resolution_time)
+VALUES
+(1,'Ali','Login Issue','High',5),
+(2,'Sara','Payment Issue','High',8),
+(3,'John','Login Issue','Medium',4),
+(4,'Emma','App Crash','High',12),
+(5,'David','Payment Issue','Low',6),
+(6,'Ahmed','App Crash','Medium',10)
+ON CONFLICT (id) DO NOTHING;
+""")
+
+connection.commit()
+
+# Retrieve all records from the tickets table.
+cursor.execute("SELECT * FROM tickets")
+records = cursor.fetchall()
+
+
+# Convert the retrieved records into a Pandas DataFrame.
+df = pd.read_sql_query(
+    "SELECT * FROM tickets",connection
+)
+print(df)
+
+
+# Check whether the DataFrame contains any missing values.
+print(df.isnull().sum())
+
+
+
+
+
+
+
+
+
+
+
+
+
  
+
