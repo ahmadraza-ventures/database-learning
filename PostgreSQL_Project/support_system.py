@@ -3,9 +3,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from sklearn.metrics.pairwise import cosine_similarity
-
 import matplotlib.pyplot as plt
-
 
 
 
@@ -64,9 +62,53 @@ print(df.isnull().sum())
 
 
 
+# Calculate and print the average resolution time for each ticket category.
+average_time = df.groupby("category")["resolution_time"].mean()
+print(average_time)
+
+
+# Find and print the ticket with the highest resolution time.
+cursor.execute("""
+SELECT *
+FROM tickets
+ORDER BY resolution_time DESC
+LIMIT 1;
+""")
+
+highest_ticket = cursor.fetchone()
+
+print("Ticket with Highest Resolution Time:")
+print(highest_ticket)
 
 
 
+
+# Convert each unique ticket category into an integer index.
+# hmm na sql sa panadda library sa kia ha 
+
+category_df = pd.read_sql_query("""
+SELECT
+    id,
+    customer_name,
+    category,
+    CASE
+        WHEN category = 'Login Issue' THEN 0
+        WHEN category = 'Payment Issue' THEN 1
+        WHEN category = 'App Crash' THEN 2
+    END AS category_index
+FROM tickets;
+""", connection)
+
+print(category_df)
+
+# Create a TensorFlow embedding layer using:
+
+number_of_unique_categories = 4
+
+embedding_layer = tf.keras.layers.Embedding(
+    input_dim=number_of_unique_categories,
+    output_dim=4
+)
 
 
 
