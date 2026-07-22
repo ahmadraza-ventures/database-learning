@@ -95,6 +95,7 @@ SELECT
         WHEN category = 'Login Issue' THEN 0
         WHEN category = 'Payment Issue' THEN 1
         WHEN category = 'App Crash' THEN 2
+              ELSE 3                   
     END AS category_index
 FROM tickets;
 """, connection)
@@ -113,8 +114,144 @@ embedding_layer = tf.keras.layers.Embedding(
 
 
 
+# Category indices ko NumPy array mein convert karo
+category_indices = np.array(category_df["category_index"])
+
+# TensorFlow tensor mein convert karo
+category_indices = tf.constant(category_indices)
+
+# Embedding vectors generate karo
+embedding_vectors = embedding_layer(category_indices)
+
+# NumPy array mein convert karo
+embedding_vectors = embedding_vectors.numpy()
+
+print("Embedding Vectors:")
+print(embedding_vectors)
+
+
+# Add each generated embedding vector to the DataFrame.
+
+category_df["Embedding_1"] = embedding_vectors[:, 0]
+category_df["Embedding_2"] = embedding_vectors[:, 1]
+category_df["Embedding_3"] = embedding_vectors[:, 2]
+category_df["Embedding_4"] = embedding_vectors[:, 3]
+
+print(category_df)
 
 
 
- 
+# Ticket 1 aur Ticket 3 ki similarity direct calculate karo
+similarity = cosine_similarity(
+    [embedding_vectors[0]],
+    [embedding_vectors[2]]
+)
 
+print("Cosine Similarity:", similarity[0][0])
+
+# given conditoin
+if similarity[0][0] > 0.8:
+    print("The tickets are similar.")
+else:
+    print("The tickets are not similar.")
+
+
+
+# Use NumPy to calculate the average resolution time of all tickets.
+average_resolution_time = np.average(df["resolution_time"])
+print("Average resolution time : ", average_resolution_time)
+
+
+
+
+# Display a bar chart using Matplotlib showing:
+# Ticket categories on the x-axis
+# Average resolution time on the y-axis
+
+categories = np.array(["Login Issue", "Payment Issue", "App Crash"])
+average_time = np.array([4.5, 7.0, 11.0])
+
+plt.bar(categories, average_time)
+
+plt.xlabel("Ticket Categories")
+plt.ylabel("Average Resolution Time")
+plt.title("Average Resolution Time of Ticket Categories")
+plt.show()
+
+
+# Ask the user to enter a priority level such as High, Medium, or Low.
+priority = input("Enter the priority level (High, Medium, Low): ")
+print("Priority Level:", priority)
+
+
+# retrieve and display only the tickets matching that priority.
+
+
+cursor.execute("""
+SELECT * FROM tickets
+WHERE priority = %s;
+""", (priority,))
+
+tickets = cursor.fetchall()
+
+for ticket in tickets:
+    print(ticket)
+
+
+# Insert a new ticket into PostgreSQL using values entered by the user.
+# User se values lo
+ticket_id = int(input("Enter Ticket ID: "))
+customer_name = input("Enter Customer Name: ")
+category = input("Enter Category: ")
+priority = input("Enter Priority (High/Medium/Low): ")
+resolution_time = int(input("Enter Resolution Time: "))
+
+# Database mein insert karo
+cursor.execute("""
+INSERT INTO tickets
+(id, customer_name, category, priority, resolution_time)
+VALUES (%s, %s, %s, %s, %s);
+""", (ticket_id, customer_name, category, priority, resolution_time))
+
+connection.commit()
+print("Ticket inserted successfully!")
+
+
+
+# Retrieve and display the updated ticket list.
+updated_df = pd.read_sql_query("SELECT * FROM tickets;", connection)
+print(updated_df)
+
+
+# Update the priority of one selected ticket.
+ticket_id = int(input("Enter Ticket ID: "))
+priority = input("Enter New Priority: ")
+
+query = "UPDATE tickets SET priority=%s WHERE id=%s"
+
+cursor.execute(query, (priority, ticket_id))
+connection.commit()
+
+print("Updated!")
+
+
+
+
+# Delete a ticket by its ID.
+ticket_id = int(input("Enter Ticket ID to delete: "))
+
+cursor.execute("""
+DELETE FROM tickets
+WHERE id = %s;
+""", (ticket_id,))
+
+connection.commit()
+
+print("Ticket deleted successfully!")
+
+
+#  Close the PostgreSQL cursor and connection properly.
+cursor.close()
+connection.close()
+
+print("PostgreSQL cursor and connection closed successfully!")
